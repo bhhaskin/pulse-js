@@ -4,7 +4,61 @@
   <meta charset="utf-8" />
   <title>Pulse JS Playground</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      font-family: system-ui, sans-serif;
+      color-scheme: light dark;
+    }
+    body {
+      margin: 2rem;
+      display: grid;
+      gap: 1.5rem;
+    }
+    pre {
+      padding: 1rem;
+      border: 1px solid currentColor;
+      border-radius: 0.75rem;
+      max-width: 32rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    button {
+      width: fit-content;
+      padding: 0.5rem 1rem;
+      border-radius: 999px;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
+  <main>
+    <h1>Pulse Playground</h1>
+    <p>Tap the button to initialize Pulse and inspect the runtime configuration.</p>
+    <button id="init">pulse.init()</button>
+    <pre id="output">Not initialized</pre>
+  </main>
+
+  <script type="module">
+    import pulse from '../src/index.ts';
+
+    const initButton = document.querySelector('#init');
+    const output = document.querySelector('#output');
+
+    const renderConfig = () => {
+      const config = pulse.getConfig();
+      output.textContent = config
+        ? JSON.stringify(config, null, 2)
+        : 'Not initialized';
+    };
+
+    initButton?.addEventListener('click', () => {
+      pulse.init({ endpoint: '/collect-events' });
+      renderConfig();
+    });
+
+    renderConfig();
+  </script>
 </body>
 </html>
