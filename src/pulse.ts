@@ -85,7 +85,6 @@ class Pulse {
       return;
     }
 
-    const endpoint = this.apiEndpoint;
     const sessionUuid = this.session_uuid;
     const clientUuid = this.ensureClientUuid();
     const enrichedPayload = { ...payload };
