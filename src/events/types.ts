@@ -20,6 +20,7 @@ export interface AutoEventContext {
   sessionCreated: boolean;
   initTimestamp: number;
   debug: boolean;
+  clientCreated: boolean;
 }
 
 export type AutoEventSetupResult = void | (() => void);

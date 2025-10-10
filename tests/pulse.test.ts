@@ -106,6 +106,7 @@ describe('pulse', () => {
     (pulse as any).initialized = false;
     (pulse as any).deviceInfo = null;
     (pulse as any).clientUuid = null;
+    (pulse as any).clientUuidCreated = false;
     (pulse as any).config = {
       debug: false,
       apiEndpoint: 'http://localhost',
@@ -169,6 +170,7 @@ describe('pulse', () => {
       expect.objectContaining({
         events: defaultAutoEvents,
         sessionCreated: true,
+        clientCreated: true,
       })
     );
   });
@@ -185,6 +187,7 @@ describe('pulse', () => {
       pulse,
       expect.objectContaining({
         sessionCreated: false,
+        clientCreated: false,
       })
     );
   });

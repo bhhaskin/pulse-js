@@ -20,11 +20,12 @@ export interface AutoEventsOptions {
   sessionCreated: boolean;
   debug: boolean;
   initTimestamp: number;
+  clientCreated: boolean;
 }
 
 export function setupAutoEvents(
   analytics: AnalyticsLike,
-  { events, sessionCreated, debug, initTimestamp }: AutoEventsOptions
+  { events, sessionCreated, debug, initTimestamp, clientCreated }: AutoEventsOptions
 ): void {
   if (!Array.isArray(events) || events.length === 0) return;
 
@@ -36,6 +37,7 @@ export function setupAutoEvents(
     sessionCreated,
     initTimestamp,
     debug,
+    clientCreated,
   };
 
   uniqueEvents.forEach((eventName) => {

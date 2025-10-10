@@ -27,6 +27,7 @@ describe('auto events', () => {
   let trackMock: ReturnType<typeof vi.fn>;
   let deviceMock: ReturnType<typeof vi.fn>;
   let sessionId: string | null;
+  let clientId: string | null;
   let analytics: AnalyticsLike;
   let restoreFns: Array<() => void>;
 
@@ -78,6 +79,7 @@ describe('auto events', () => {
     trackMock = vi.fn();
     deviceMock = vi.fn(() => deviceInfo);
     sessionId = 'session-1';
+    clientId = 'client-1';
     analytics = {
       track: trackMock,
       device: deviceMock,
@@ -85,7 +87,7 @@ describe('auto events', () => {
         return sessionId;
       },
       get client_uuid() {
-        return 'client-1';
+        return clientId;
       },
     } satisfies AnalyticsLike;
     restoreFns = [];
@@ -103,10 +105,17 @@ describe('auto events', () => {
       sessionCreated: false,
       debug: false,
       initTimestamp: Date.now(),
+      clientCreated: true,
     });
 
-    const recordedAt = localStorage.getItem('pulse_first_visit_at');
-    expect(recordedAt).not.toBeNull();
+    const storedRaw = localStorage.getItem('pulse_first_visit_at');
+    expect(storedRaw).not.toBeNull();
+    const stored = JSON.parse(storedRaw!);
+    expect(stored).toMatchObject({
+      client_uuid: 'client-1',
+    });
+    const recordedAt = stored.first_visit_at;
+    expect(typeof recordedAt).toBe('string');
     expect(trackMock).toHaveBeenCalledTimes(1);
     expect(trackMock).toHaveBeenCalledWith(
       'auto',
@@ -126,10 +135,93 @@ describe('auto events', () => {
       sessionCreated: false,
       debug: false,
       initTimestamp: Date.now(),
+      clientCreated: false,
     });
 
-    expect(localStorage.getItem('pulse_first_visit_at')).toBe(recordedAt);
+    expect(JSON.parse(localStorage.getItem('pulse_first_visit_at')!)).toMatchObject({
+      client_uuid: 'client-1',
+      first_visit_at: recordedAt,
+    });
     expect(trackMock).not.toHaveBeenCalled();
+  });
+
+  it('does not record first_visit when storage is empty but client already exists', () => {
+    setupAutoEvents(analytics, {
+      events: ['first_visit'],
+      sessionCreated: false,
+      debug: false,
+      initTimestamp: Date.now(),
+      clientCreated: false,
+    });
+
+    expect(localStorage.getItem('pulse_first_visit_at')).toBeNull();
+    expect(trackMock).not.toHaveBeenCalled();
+  });
+
+  it('records first_visit again when client uuid changes', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2024-01-01T00:00:00.000Z'));
+
+    setupAutoEvents(analytics, {
+      events: ['first_visit'],
+      sessionCreated: false,
+      debug: false,
+      initTimestamp: Date.now(),
+      clientCreated: true,
+    });
+
+    trackMock.mockClear();
+    vi.setSystemTime(new Date('2024-01-02T12:34:56.000Z'));
+    clientId = 'client-2';
+
+    setupAutoEvents(analytics, {
+      events: ['first_visit'],
+      sessionCreated: false,
+      debug: false,
+      initTimestamp: Date.now(),
+      clientCreated: true,
+    });
+
+    expect(trackMock).toHaveBeenCalledTimes(1);
+    const payload = trackMock.mock.calls[0][2] as Record<string, unknown>;
+    expect(payload).toMatchObject({
+      first_visit_at: new Date('2024-01-02T12:34:56.000Z').toISOString(),
+      device: deviceInfo,
+    });
+
+    const stored = JSON.parse(localStorage.getItem('pulse_first_visit_at')!);
+    expect(stored).toMatchObject({
+      client_uuid: 'client-2',
+      first_visit_at: new Date('2024-01-02T12:34:56.000Z').toISOString(),
+    });
+  });
+
+  it('records first_visit for a new client id even if cookie pre-exists', () => {
+    const legacyTimestamp = new Date('2024-01-03T00:00:00.000Z').toISOString();
+    localStorage.setItem(
+      'pulse_first_visit_at',
+      JSON.stringify({ first_visit_at: legacyTimestamp, client_uuid: 'old-client' })
+    );
+
+    clientId = 'client-2';
+
+    setupAutoEvents(analytics, {
+      events: ['first_visit'],
+      sessionCreated: false,
+      debug: false,
+      initTimestamp: Date.now(),
+      clientCreated: false,
+    });
+
+    expect(trackMock).toHaveBeenCalledTimes(1);
+    const payload = trackMock.mock.calls[0][2] as Record<string, unknown>;
+    expect(payload.first_visit_at).not.toBe(legacyTimestamp);
+    expect(payload).toMatchObject({
+      device: deviceInfo,
+    });
+
+    const stored = JSON.parse(localStorage.getItem('pulse_first_visit_at')!);
+    expect(stored.client_uuid).toBe('client-2');
   });
 
   it('records session_start only when a session is created', () => {
@@ -138,6 +230,7 @@ describe('auto events', () => {
       sessionCreated: true,
       debug: false,
       initTimestamp: 1_700_000_000_000,
+      clientCreated: false,
     });
 
     expect(trackMock).toHaveBeenCalledTimes(1);
@@ -159,6 +252,7 @@ describe('auto events', () => {
       sessionCreated: false,
       debug: false,
       initTimestamp: Date.now(),
+      clientCreated: false,
     });
 
     expect(trackMock).not.toHaveBeenCalled();
@@ -176,6 +270,7 @@ describe('auto events', () => {
       sessionCreated: false,
       debug: false,
       initTimestamp: Date.now(),
+      clientCreated: false,
     });
 
     expect(trackMock).toHaveBeenCalledTimes(1);
@@ -199,6 +294,7 @@ describe('auto events', () => {
       sessionCreated: true,
       debug: false,
       initTimestamp: Date.now(),
+      clientCreated: false,
     });
 
     expect(trackMock).toHaveBeenCalledTimes(1);
@@ -224,6 +320,7 @@ describe('auto events', () => {
       sessionCreated: false,
       debug: false,
       initTimestamp: Date.now(),
+      clientCreated: false,
     });
 
     link.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 }));
@@ -253,6 +350,7 @@ describe('auto events', () => {
       sessionCreated: false,
       debug: false,
       initTimestamp: Date.now(),
+      clientCreated: false,
     });
 
     expect(trackMock).not.toHaveBeenCalled();
@@ -287,6 +385,7 @@ describe('auto events', () => {
       sessionCreated: false,
       debug: false,
       initTimestamp: Date.now(),
+      clientCreated: false,
     });
 
     expect(trackMock).not.toHaveBeenCalled();

@@ -52,6 +52,7 @@ class Pulse {
   private flushListenersRegistered = false;
   private metadataSentForSession: string | null = null;
   private clientUuid: string | null = null;
+  private clientUuidCreated = false;
 
   get apiEndpoint(): string {
     return this.config.apiEndpoint!;
@@ -265,11 +266,15 @@ class Pulse {
   }
 
   private ensureClientUuid(): string | null {
-    if (typeof document === 'undefined') return null;
+    if (typeof document === 'undefined') {
+      this.clientUuidCreated = false;
+      return null;
+    }
 
     const existing = this.readClientUuidFromCookie();
     if (existing) {
       this.clientUuid = existing;
+      this.clientUuidCreated = false;
       return existing;
     }
 
@@ -278,6 +283,7 @@ class Pulse {
       newId
     )}; path=/; max-age=${CLIENT_COOKIE_MAX_AGE}; SameSite=Lax`;
     this.clientUuid = newId;
+    this.clientUuidCreated = true;
     return newId;
   }
 
@@ -287,6 +293,7 @@ class Pulse {
     const initTimestamp = Date.now();
     const mergedAutoEvents = userConfig?.autoEvents ?? this.config.autoEvents ?? DEFAULT_AUTO_EVENTS;
     this.ensureClientUuid();
+    const clientCreated = this.clientUuidCreated;
 
     this.config = {
       ...this.config,
@@ -313,6 +320,7 @@ class Pulse {
       sessionCreated,
       debug: Boolean(this.config.debug),
       initTimestamp,
+      clientCreated,
     });
 
     if (this.config.batching === false) {
