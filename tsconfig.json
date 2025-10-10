@@ -1,15 +1,17 @@
 {
   "compilerOptions": {
+    "importHelpers": true,
     "target": "ES2020",
     "module": "ESNext",
-    "moduleResolution": "Bundler",
+    "moduleResolution": "Node",
     "lib": ["ES2020", "DOM"],
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
-    "sourceMap": true,
-    "types": ["vitest/globals"]
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "noEmit": true
   },
-  "include": ["src", "tests", "vitest.config.ts"]
+  "include": ["src"]
 }
