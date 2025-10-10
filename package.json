@@ -1,5 +1,5 @@
 {
-  "name": "pulse-js",
+  "name": "@bhhaskin/pulse-js",
   "version": "0.1.0",
   "description": "Tiny analytics sdk for browsers. Send events with Beacon/fetch to your backend.",
   "author": "Bryan Haskin <bhhaskin@bitsofsimplicity.com>",

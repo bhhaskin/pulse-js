@@ -210,6 +210,30 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@bhhaskin/pulse-js@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "@bhhaskin/pulse-js@workspace:."
+  dependencies:
+    "@rollup/plugin-node-resolve": "npm:^16.0.1"
+    "@rollup/plugin-typescript": "npm:^12.1.2"
+    "@types/node": "npm:^20.0.0"
+    "@typescript-eslint/eslint-plugin": "npm:^8.30.1"
+    "@typescript-eslint/parser": "npm:^8.30.1"
+    "@vitest/coverage-istanbul": "npm:^3.1.1"
+    "@vitest/coverage-v8": "npm:^3.1.1"
+    "@vitest/ui": "npm:^3.1.1"
+    eslint: "npm:^9.24.0"
+    jsdom: "npm:^26.1.0"
+    rollup: "npm:^4.40.0"
+    rollup-plugin-dts: "npm:^6.2.1"
+    rollup-plugin-terser: "npm:^7.0.2"
+    tslib: "npm:^2.8.1"
+    typescript: "npm:^5.8.3"
+    uuid: "npm:^11.1.0"
+    vitest: "npm:^3.1.1"
+  languageName: unknown
+  linkType: soft
+
 "@csstools/color-helpers@npm:^5.1.0":
   version: 5.1.0
   resolution: "@csstools/color-helpers@npm:5.1.0"
@@ -2946,30 +2970,6 @@ __metadata:
   checksum: 10c0/9c7045a1a2928094b5b9b15336dcd2a7b1c052f674550df63cc3f36cd44028e5080448175b6f6ca32b642de81150f5e7b1a98b728f15cb069f2dd60ac2616b96
   languageName: node
   linkType: hard
-
-"pulse-js@workspace:.":
-  version: 0.0.0-use.local
-  resolution: "pulse-js@workspace:."
-  dependencies:
-    "@rollup/plugin-node-resolve": "npm:^16.0.1"
-    "@rollup/plugin-typescript": "npm:^12.1.2"
-    "@types/node": "npm:^20.0.0"
-    "@typescript-eslint/eslint-plugin": "npm:^8.30.1"
-    "@typescript-eslint/parser": "npm:^8.30.1"
-    "@vitest/coverage-istanbul": "npm:^3.1.1"
-    "@vitest/coverage-v8": "npm:^3.1.1"
-    "@vitest/ui": "npm:^3.1.1"
-    eslint: "npm:^9.24.0"
-    jsdom: "npm:^26.1.0"
-    rollup: "npm:^4.40.0"
-    rollup-plugin-dts: "npm:^6.2.1"
-    rollup-plugin-terser: "npm:^7.0.2"
-    tslib: "npm:^2.8.1"
-    typescript: "npm:^5.8.3"
-    uuid: "npm:^11.1.0"
-    vitest: "npm:^3.1.1"
-  languageName: unknown
-  linkType: soft
 
 "punycode@npm:^2.1.0, punycode@npm:^2.3.1":
   version: 2.3.1

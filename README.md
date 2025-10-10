@@ -1,4 +1,4 @@
-# pulse-js
+# @bhhaskin/pulse-js
 
 Tiny analytics client for browsers. Send events with Beacon/fetch to your backend. 
 
@@ -23,7 +23,7 @@ Tiny analytics client for browsers. Send events with Beacon/fetch to your backen
 Install via your preferred package manager:
 
 ```bash
-yarn add pulse-js
+yarn add @bhhaskin/pulse-js
 ```
 
 ---
@@ -31,7 +31,7 @@ yarn add pulse-js
 ## Update
 
 ```bash
-yarn upgrade pulse-js
+yarn upgrade @bhhaskin/pulse-js
 ```
 
 ---
@@ -49,7 +49,7 @@ yarn test
 ### 1. Initialize in your app
 
 ```ts
-import { pulse } from 'pulse-js';
+import { pulse } from '@bhhaskin/pulse-js';
 
 await pulse.init({
   apiEndpoint: 'https://example.com' // or env-based
@@ -135,7 +135,7 @@ type DeviceInfo = {
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
-import { pulse } from 'pulse-js';
+import { pulse } from '@bhhaskin/pulse-js';
 
 type AnalyticsContextValue = {
   sessionUuid: string | null;
