@@ -74,6 +74,32 @@ describe('auto events', () => {
     });
   };
 
+  const overrideStringAccessor = (target: Record<string, unknown>, key: string, initial: string) => {
+    let current = initial;
+    const original = Object.getOwnPropertyDescriptor(target, key);
+    Object.defineProperty(target, key, {
+      configurable: true,
+      get: () => current,
+      set: (next: unknown) => {
+        current = String(next);
+      },
+    });
+
+    restoreFns.push(() => {
+      if (original) {
+        Object.defineProperty(target, key, original);
+      } else {
+        delete target[key];
+      }
+    });
+
+    return {
+      set(next: string) {
+        current = next;
+      },
+    };
+  };
+
   beforeEach(() => {
     localStorage.clear();
     trackMock = vi.fn();
@@ -363,6 +389,46 @@ describe('auto events', () => {
       'user_engagement',
       expect.objectContaining({ engagement_time_msec: 10_000 })
     );
+  });
+
+  it('accumulates user_engagement across visibility changes', () => {
+    vi.useFakeTimers();
+
+    const documentRecord = document as unknown as Record<string, unknown>;
+    const visibilityOverride = overrideStringAccessor(
+      documentRecord,
+      'visibilityState',
+      String(document.visibilityState ?? 'visible')
+    );
+    visibilityOverride.set('visible');
+
+    setupAutoEvents(analytics, {
+      events: ['user_engagement'],
+      sessionCreated: false,
+      debug: false,
+      initTimestamp: Date.now(),
+      clientCreated: false,
+    });
+
+    vi.advanceTimersByTime(5_000);
+    expect(trackMock).not.toHaveBeenCalled();
+
+    window.dispatchEvent(new Event('blur'));
+    visibilityOverride.set('hidden');
+    document.dispatchEvent(new Event('visibilitychange'));
+
+    vi.advanceTimersByTime(60_000);
+    expect(trackMock).not.toHaveBeenCalled();
+
+    visibilityOverride.set('visible');
+    document.dispatchEvent(new Event('visibilitychange'));
+    window.dispatchEvent(new Event('focus'));
+
+    vi.advanceTimersByTime(5_000);
+
+    expect(trackMock).toHaveBeenCalledTimes(1);
+    const payload = trackMock.mock.calls[0][2] as Record<string, unknown>;
+    expect(payload.engagement_time_msec).toBe(10_000);
   });
 
   it('records scroll after reaching 90% page depth', () => {
