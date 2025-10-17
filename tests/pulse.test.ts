@@ -307,9 +307,9 @@ describe('pulse', () => {
         clientUuid: 'mock-uuid',
         sessionUuid: 'mock-uuid',
       });
-      expect(payload.events[0].userAgent).toBe('mock-ua');
+      expect(payload.events[0].payload.user_agent).toBe('mock-ua');
       expect(payload.events[0].payload.device).toEqual(defaultDeviceInfo);
-      expect(payload.events[1]?.userAgent).toBeUndefined();
+      expect(payload.events[1]?.payload.user_agent).toBeUndefined();
       expect(payload.events[1]?.payload.device).toBeUndefined();
       expect(fetchMock).not.toHaveBeenCalled();
     } finally {
@@ -346,7 +346,7 @@ describe('pulse', () => {
       clientUuid: 'mock-uuid',
       sessionUuid: 'mock-uuid',
     });
-    expect(payload.events[0].userAgent).toBe('mock-ua');
+    expect(payload.events[0].payload.user_agent).toBe('mock-ua');
     expect(payload.events[0].payload.device).toEqual(defaultDeviceInfo);
   });
 
@@ -376,7 +376,7 @@ describe('pulse', () => {
         clientUuid: 'mock-uuid',
         sessionUuid: 'mock-uuid',
       });
-      expect(payload.events[0].userAgent).toBe('mock-ua');
+      expect(payload.events[0].payload.user_agent).toBe('mock-ua');
       expect(payload.events[0].payload.device).toEqual(defaultDeviceInfo);
       expect((pulse as any).eventQueue).toHaveLength(0);
       expect((pulse as any).flushTimer).toBeNull();
@@ -402,13 +402,13 @@ describe('pulse', () => {
     expect(queue).toHaveLength(2);
     expect(queue[0]).toMatchObject({
       eventName: 'first',
-      userAgent: 'mock-ua',
     });
+    expect((queue[0] as any).payload.user_agent).toBe('mock-ua');
     expect(queue[0].payload.device).toEqual(defaultDeviceInfo);
     expect(queue[1]).toMatchObject({
       eventName: 'second',
     });
-    expect(queue[1].userAgent).toBeUndefined();
+    expect((queue[1] as any).payload.user_agent).toBeUndefined();
     expect(queue[1].payload.device).toBeUndefined();
 
     if ((pulse as any).flushTimer) {

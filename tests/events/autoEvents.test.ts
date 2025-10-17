@@ -278,14 +278,14 @@ describe('auto events', () => {
       'auto',
       'page_view',
       expect.objectContaining({
-        page_location: window.location.href,
-        page_path: window.location.pathname,
         page_title: 'Page Title',
       })
     );
 
     const payload = trackMock.mock.calls[0][2] as Record<string, unknown>;
     expect(payload).not.toHaveProperty('device');
+    expect(payload).not.toHaveProperty('page_location');
+    expect(payload).not.toHaveProperty('page_path');
   });
 
   it('includes device metadata on page_view when session is newly created', () => {

@@ -28,7 +28,6 @@ type QueuedEvent = {
   eventName: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   payload: Record<string, any>;
-  userAgent?: string;
   sessionUuid: string | null;
   clientUuid: string | null;
   url: string;
@@ -103,8 +102,8 @@ class Pulse {
     const metadataKey = sessionUuid ?? '__no_session__';
     const shouldAttachMetadata = this.metadataSentForSession !== metadataKey;
     if (shouldAttachMetadata) {
-      if (navigatorRef.userAgent) {
-        data.userAgent = navigatorRef.userAgent;
+      if (navigatorRef.userAgent && enrichedPayload.user_agent === undefined) {
+        enrichedPayload.user_agent = navigatorRef.userAgent;
       }
       const deviceInfo = this.device();
       if (deviceInfo) {
