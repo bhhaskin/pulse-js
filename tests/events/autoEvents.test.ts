@@ -389,6 +389,15 @@ describe('auto events', () => {
       'user_engagement',
       expect.objectContaining({ engagement_time_msec: 10_000 })
     );
+
+    vi.advanceTimersByTime(10_000);
+
+    expect(trackMock).toHaveBeenCalledTimes(2);
+    expect(trackMock).toHaveBeenLastCalledWith(
+      'auto',
+      'user_engagement',
+      expect.objectContaining({ engagement_time_msec: 10_000 })
+    );
   });
 
   it('accumulates user_engagement across visibility changes', () => {
@@ -429,6 +438,32 @@ describe('auto events', () => {
     expect(trackMock).toHaveBeenCalledTimes(1);
     const payload = trackMock.mock.calls[0][2] as Record<string, unknown>;
     expect(payload.engagement_time_msec).toBe(10_000);
+
+    vi.advanceTimersByTime(10_000);
+
+    expect(trackMock).toHaveBeenCalledTimes(2);
+    const second = trackMock.mock.calls[1][2] as Record<string, unknown>;
+    expect(second.engagement_time_msec).toBe(10_000);
+  });
+
+  it('keeps firing user_engagement while the page stays active', () => {
+    vi.useFakeTimers();
+
+    setupAutoEvents(analytics, {
+      events: ['user_engagement'],
+      sessionCreated: false,
+      debug: false,
+      initTimestamp: Date.now(),
+      clientCreated: false,
+    });
+
+    vi.advanceTimersByTime(30_000);
+
+    expect(trackMock).toHaveBeenCalledTimes(3);
+    trackMock.mock.calls.forEach(([, , payload]) => {
+      const engagement = (payload as Record<string, unknown>).engagement_time_msec;
+      expect(engagement).toBe(10_000);
+    });
   });
 
   it('records scroll after reaching 90% page depth', () => {
