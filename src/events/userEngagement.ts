@@ -9,40 +9,23 @@ export const userEngagementEvent: AutoEventDefinition = {
     if (typeof window !== 'object' || typeof document === 'undefined') return;
 
     let timerId: ReturnType<typeof setTimeout> | null = null;
-    let fired = false;
     let engagedTime = 0;
     let activeStart: number | null = null;
+    let isActive = false;
+    let isVisible = document.visibilityState === 'visible';
+    let isFocused = true;
 
-    const finalizeActivePeriod = () => {
-      if (activeStart === null) return;
-      const now = Date.now();
-      engagedTime += Math.max(now - activeStart, 0);
-      activeStart = null;
-    };
-
-    const cleanup = () => {
+    const clearTimer = () => {
       if (timerId !== null) {
         clearTimeout(timerId);
         timerId = null;
       }
-
-      activeStart = null;
-
-      window.removeEventListener('focus', handleFocus, true);
-      window.removeEventListener('blur', handleBlur, true);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
 
-    const fire = () => {
-      if (fired) return;
-      fired = true;
-      finalizeActivePeriod();
-      cleanup();
-
+    const emitEngagement = () => {
       try {
-        const engagementTime = Math.max(engagedTime, USER_ENGAGEMENT_DELAY_MS);
         analytics.track('auto', 'user_engagement', {
-          engagement_time_msec: engagementTime,
+          engagement_time_msec: USER_ENGAGEMENT_DELAY_MS,
         });
 
         if (!writeSessionTimestamp(Date.now()) && debug) {
@@ -55,56 +38,96 @@ export const userEngagementEvent: AutoEventDefinition = {
       }
     };
 
-    const schedule = () => {
-      if (fired) return;
-      if (timerId !== null) return;
+    const flushEngagement = () => {
+      while (engagedTime >= USER_ENGAGEMENT_DELAY_MS) {
+        emitEngagement();
+        engagedTime -= USER_ENGAGEMENT_DELAY_MS;
+      }
+    };
+
+    const handleActiveElapsed = () => {
+      if (!isActive) return;
+      if (activeStart !== null) {
+        const now = Date.now();
+        engagedTime += Math.max(now - activeStart, 0);
+        activeStart = now;
+      }
+      flushEngagement();
+      ensureTimer();
+    };
+
+    const ensureTimer = () => {
+      if (!isActive || timerId !== null) return;
       const remaining = Math.max(USER_ENGAGEMENT_DELAY_MS - engagedTime, 0);
       if (remaining === 0) {
-        fire();
+        handleActiveElapsed();
         return;
       }
-      activeStart = Date.now();
       timerId = window.setTimeout(() => {
         timerId = null;
-        fire();
+        handleActiveElapsed();
       }, remaining);
     };
 
-    const cancel = () => {
-      if (timerId !== null) {
-        clearTimeout(timerId);
-        timerId = null;
+    const deactivate = () => {
+      if (!isActive) return;
+      isActive = false;
+      clearTimer();
+      if (activeStart !== null) {
+        engagedTime += Math.max(Date.now() - activeStart, 0);
+        activeStart = null;
       }
-      finalizeActivePeriod();
-      if (engagedTime >= USER_ENGAGEMENT_DELAY_MS) {
-        fire();
+      flushEngagement();
+    };
+
+    const activate = () => {
+      if (isActive) {
+        ensureTimer();
+        return;
+      }
+      isActive = true;
+      flushEngagement();
+      activeStart = Date.now();
+      ensureTimer();
+    };
+
+    const updateActivityState = () => {
+      const shouldBeActive = isVisible && isFocused;
+      if (shouldBeActive) {
+        activate();
+      } else {
+        deactivate();
       }
     };
 
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        schedule();
-      } else {
-        cancel();
-      }
+      isVisible = document.visibilityState === 'visible';
+      updateActivityState();
     };
 
     const handleFocus = () => {
-      schedule();
+      isFocused = true;
+      updateActivityState();
     };
 
     const handleBlur = () => {
-      cancel();
+      isFocused = false;
+      updateActivityState();
     };
 
     window.addEventListener('focus', handleFocus, true);
     window.addEventListener('blur', handleBlur, true);
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
-    if (document.visibilityState === 'visible') {
-      schedule();
-    }
+    updateActivityState();
 
-    return cleanup;
+    return () => {
+      clearTimer();
+      isActive = false;
+      activeStart = null;
+      window.removeEventListener('focus', handleFocus, true);
+      window.removeEventListener('blur', handleBlur, true);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   },
 };
