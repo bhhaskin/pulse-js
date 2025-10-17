@@ -1,11 +1,8 @@
 import type { AutoEventDefinition } from './types';
 
 const getPagePayload = (): Record<string, unknown> => {
-  const { location, document } = window;
-  const payload: Record<string, unknown> = {
-    page_location: location.href,
-    page_path: location.pathname,
-  };
+  const { document } = window;
+  const payload: Record<string, unknown> = {};
 
   if (document?.title) {
     payload.page_title = document.title;

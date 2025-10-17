@@ -5,17 +5,28 @@ const USER_ENGAGEMENT_DELAY_MS = 10_000;
 
 export const userEngagementEvent: AutoEventDefinition = {
   name: 'user_engagement',
-  setup: ({ analytics, debug, initTimestamp }) => {
+  setup: ({ analytics, debug }) => {
     if (typeof window !== 'object' || typeof document === 'undefined') return;
 
     let timerId: ReturnType<typeof setTimeout> | null = null;
     let fired = false;
+    let engagedTime = 0;
+    let activeStart: number | null = null;
+
+    const finalizeActivePeriod = () => {
+      if (activeStart === null) return;
+      const now = Date.now();
+      engagedTime += Math.max(now - activeStart, 0);
+      activeStart = null;
+    };
 
     const cleanup = () => {
       if (timerId !== null) {
         clearTimeout(timerId);
         timerId = null;
       }
+
+      activeStart = null;
 
       window.removeEventListener('focus', handleFocus, true);
       window.removeEventListener('blur', handleBlur, true);
@@ -25,10 +36,11 @@ export const userEngagementEvent: AutoEventDefinition = {
     const fire = () => {
       if (fired) return;
       fired = true;
+      finalizeActivePeriod();
       cleanup();
 
       try {
-        const engagementTime = Math.max(Date.now() - initTimestamp, 0);
+        const engagementTime = Math.max(engagedTime, USER_ENGAGEMENT_DELAY_MS);
         analytics.track('auto', 'user_engagement', {
           engagement_time_msec: engagementTime,
         });
@@ -46,13 +58,27 @@ export const userEngagementEvent: AutoEventDefinition = {
     const schedule = () => {
       if (fired) return;
       if (timerId !== null) return;
-      timerId = window.setTimeout(fire, USER_ENGAGEMENT_DELAY_MS);
+      const remaining = Math.max(USER_ENGAGEMENT_DELAY_MS - engagedTime, 0);
+      if (remaining === 0) {
+        fire();
+        return;
+      }
+      activeStart = Date.now();
+      timerId = window.setTimeout(() => {
+        timerId = null;
+        fire();
+      }, remaining);
     };
 
     const cancel = () => {
-      if (timerId === null) return;
-      clearTimeout(timerId);
-      timerId = null;
+      if (timerId !== null) {
+        clearTimeout(timerId);
+        timerId = null;
+      }
+      finalizeActivePeriod();
+      if (engagedTime >= USER_ENGAGEMENT_DELAY_MS) {
+        fire();
+      }
     };
 
     const handleVisibilityChange = () => {
